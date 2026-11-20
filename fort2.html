@@ -109,12 +109,7 @@ button {
     flex: 1;
     background: #218c57;
     color: white;
-}
-
-.parar {
-    flex: 1;
-    background: #a43c3c;
-    color: white;
+    width: 100%;
 }
 
 button:disabled {
@@ -299,10 +294,6 @@ function criarItem(item, categoria) {
             <button class="iniciar" id="iniciar-${id}">
                 INICIAR
             </button>
-
-            <button class="parar" id="parar-${id}" disabled>
-                PARAR
-            </button>
         </div>
 
         <div class="resultado" id="resultado-${id}">
@@ -317,8 +308,6 @@ function criarItem(item, categoria) {
     document.getElementById(categoria).appendChild(card);
 
     document.getElementById(`iniciar-${id}`).onclick = () => iniciarItem(id);
-
-    document.getElementById(`parar-${id}`).onclick = () => pararItem(id);
 
     document.getElementById(`reset-${id}`).onclick = () => resetarItem(id);
 }
@@ -343,19 +332,6 @@ function iniciarItem(id) {
     atualizarBotao(id);
 
     iniciarLoop();
-}
-
-// PARAR ITEM
-
-function pararItem(id) {
-
-    const dado = buscar(id);
-
-    dado.ativo = false;
-
-    mostrarResultado(id, "Simulação interrompida.", "");
-
-    atualizarBotao(id);
 }
 
 // LOOP AUTOMÁTICO
@@ -436,9 +412,6 @@ function atualizarBotao(id) {
 
     document.getElementById(`iniciar-${id}`).disabled =
         dado.ativo;
-
-    document.getElementById(`parar-${id}`).disabled =
-        !dado.ativo;
 
     document.getElementById(`iniciar-${id}`).textContent =
         dado.pausado ? "INICIAR NOVAMENTE" : "INICIAR";
