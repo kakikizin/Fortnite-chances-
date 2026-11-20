@@ -1,0 +1,537 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fortnite - Simulador de Tesouros</title>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+    background: #10121c;
+    color: white;
+    font-family: Arial, sans-serif;
+    padding: 25px 15px;
+    margin: 0;
+}
+
+.container {
+    max-width: 1000px;
+    margin: auto;
+}
+
+h1 {
+    text-align: center;
+    color: #ffc94a;
+}
+
+.subtitulo {
+    text-align: center;
+    color: #999;
+    margin-bottom: 30px;
+}
+
+h2 {
+    color: #ffc94a;
+    border-bottom: 1px solid #393e50;
+    padding-bottom: 10px;
+    margin-top: 35px;
+}
+
+.lista {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 14px;
+}
+
+.item {
+    background: #202436;
+    border: 1px solid #393e50;
+    border-radius: 12px;
+    padding: 16px;
+}
+
+.nome {
+    font-size: 17px;
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #fff;
+}
+
+.chance {
+    color: #aaa;
+    font-size: 12px;
+    margin-bottom: 15px;
+}
+
+.contadores {
+    display: flex;
+    justify-content: space-between;
+    background: #151927;
+    border-radius: 8px;
+    padding: 12px 8px;
+    margin-bottom: 13px;
+    text-align: center;
+}
+
+.contadores span {
+    display: block;
+    font-size: 11px;
+    color: #aaa;
+    margin-bottom: 5px;
+}
+
+.contadores strong {
+    font-size: 23px;
+    color: #ffc94a;
+}
+
+.ganhos strong {
+    color: #58e69a;
+}
+
+button {
+    cursor: pointer;
+    border: none;
+    border-radius: 7px;
+    padding: 11px;
+    font-weight: bold;
+}
+
+.acoes {
+    display: flex;
+    gap: 7px;
+}
+
+.iniciar {
+    flex: 1;
+    background: #218c57;
+    color: white;
+}
+
+.parar {
+    flex: 1;
+    background: #a43c3c;
+    color: white;
+}
+
+button:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.resultado {
+    text-align: center;
+    font-size: 13px;
+    min-height: 20px;
+    margin: 12px 0;
+    color: #aaa;
+}
+
+.ganhou {
+    color: #58e69a;
+    font-weight: bold;
+}
+
+.perdeu {
+    color: #ff7777;
+}
+
+.reset-item {
+    width: 100%;
+    background: #343746;
+    color: #ccc;
+    margin-top: 5px;
+}
+
+.reset-item:hover {
+    background: #505365;
+}
+
+.resetar-tudo {
+    width: 100%;
+    background: #a43c3c;
+    color: white;
+    padding: 15px;
+    margin-top: 35px;
+    font-size: 15px;
+}
+
+.resetar-tudo:hover {
+    background: #d14d4d;
+}
+
+.estatisticas {
+    background: #202436;
+    padding: 18px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-around;
+    text-align: center;
+    margin-bottom: 25px;
+    gap: 10px;
+}
+
+.estatisticas strong {
+    display: block;
+    color: #ffc94a;
+    font-size: 25px;
+    margin-top: 5px;
+}
+
+.aviso {
+    text-align: center;
+    font-size: 12px;
+    color: #777;
+    margin-top: 20px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>TESOURO DO FORTNITE</h1>
+<p class="subtitulo">Simulador automático de recompensas</p>
+
+<div class="estatisticas">
+    <div>
+        Total de tentativas
+        <strong id="totalTentativas">0</strong>
+    </div>
+
+    <div>
+        Total de ganhos
+        <strong id="totalGanhos">0</strong>
+    </div>
+</div>
+
+<h2>Recompensas principais</h2>
+<div class="lista" id="principais"></div>
+
+<h2>Gizmos</h2>
+<div class="lista" id="gizmos"></div>
+
+<button class="resetar-tudo" onclick="resetarTudo()">
+    RESETAR TUDO
+</button>
+
+<p class="aviso">
+    Simulador de probabilidades. Não interfere na sua conta do Fortnite.
+</p>
+
+</div>
+
+<script>
+
+// ITENS E PROBABILIDADES
+
+const principais = [
+    { nome: "Solid Gold Miku", chance: 1 / 1562500 },
+    { nome: "Pirate Shop Access", chance: 1 / 137500 },
+    { nome: "Veículo dourado semanal", chance: 1 / 7813 },
+    { nome: "Miku's Takarabako", chance: 1 / 568 },
+    { nome: "PPPP", chance: 1 / 391 },
+    { nome: "May Fortune Find You", chance: 1 / 272 }
+];
+
+const gizmos = [
+    { nome: "Sprite Locator", chance: 1 / 635 },
+    { nome: "Lucky Locator", chance: 1 / 635 },
+    { nome: "Golden Firework", chance: 1 / 635 },
+    { nome: "Extraction Accelerator", chance: 1 / 635 },
+    { nome: "Portable Extractor", chance: 1 / 635 }
+];
+
+// DADOS
+
+let dados = [];
+let idAtual = 0;
+let totalTentativas = 0;
+let totalGanhos = 0;
+
+let simulacaoAtiva = false;
+let frameId = null;
+
+// CRIAR ITENS
+
+function criarItem(item, categoria) {
+
+    const id = idAtual++;
+
+    dados.push({
+        id,
+        nome: item.nome,
+        chance: item.chance,
+        tentativas: 0,
+        ganhos: 0,
+        pausado: false,
+        ativo: false,
+        velocidade: 10000
+    });
+
+    const card = document.createElement("div");
+    card.className = "item";
+
+    card.innerHTML = `
+        <div class="nome">${item.nome}</div>
+
+        <div class="chance">
+            Chance: 1 em ${Math.round(1/item.chance).toLocaleString("pt-BR")}
+        </div>
+
+        <div class="contadores">
+            <div>
+                <span>Tentativas</span>
+                <strong id="tentativas-${id}">0</strong>
+            </div>
+
+            <div class="ganhos">
+                <span>Vezes ganhadas</span>
+                <strong id="ganhos-${id}">0</strong>
+            </div>
+        </div>
+
+        <div class="acoes">
+            <button class="iniciar" id="iniciar-${id}">
+                INICIAR
+            </button>
+
+            <button class="parar" id="parar-${id}" disabled>
+                PARAR
+            </button>
+        </div>
+
+        <div class="resultado" id="resultado-${id}">
+            Aguardando início...
+        </div>
+
+        <button class="reset-item" id="reset-${id}">
+            RESETAR ITEM
+        </button>
+    `;
+
+    document.getElementById(categoria).appendChild(card);
+
+    document.getElementById(`iniciar-${id}`).onclick = () => iniciarItem(id);
+
+    document.getElementById(`parar-${id}`).onclick = () => pararItem(id);
+
+    document.getElementById(`reset-${id}`).onclick = () => resetarItem(id);
+}
+
+function buscar(id) {
+    return dados.find(d => d.id === id);
+}
+
+// INICIAR ITEM
+
+function iniciarItem(id) {
+
+    const dado = buscar(id);
+
+    if (dado.ativo) return;
+
+    dado.ativo = true;
+    dado.pausado = false;
+
+    mostrarResultado(id, "Simulando...", "");
+
+    atualizarBotao(id);
+
+    iniciarLoop();
+}
+
+// PARAR ITEM
+
+function pararItem(id) {
+
+    const dado = buscar(id);
+
+    dado.ativo = false;
+
+    mostrarResultado(id, "Simulação interrompida.", "");
+
+    atualizarBotao(id);
+}
+
+// LOOP AUTOMÁTICO
+
+function iniciarLoop() {
+
+    if (simulacaoAtiva) return;
+
+    simulacaoAtiva = true;
+
+    function executar() {
+
+        if (!simulacaoAtiva) return;
+
+        const inicio = performance.now();
+
+        while (performance.now() - inicio < 12) {
+
+            for (const dado of dados) {
+
+                if (!dado.ativo) continue;
+
+                for (let i = 0; i < dado.velocidade; i++) {
+
+                    dado.tentativas++;
+                    totalTentativas++;
+
+                    if (Math.random() < dado.chance) {
+
+                        dado.ganhos++;
+                        totalGanhos++;
+
+                        mostrarResultado(
+                            dado.id,
+                            "VOCÊ GANHOU!",
+                            "ganhou"
+                        );
+
+                        // PAUSA AUTOMATICAMENTE AO GANHAR
+
+                        dado.ativo = false;
+                        dado.pausado = true;
+
+                        break;
+                    }
+                }
+            }
+        }
+
+        atualizarTodos();
+
+        if (dados.some(d => d.ativo)) {
+            frameId = requestAnimationFrame(executar);
+        } else {
+            simulacaoAtiva = false;
+            frameId = null;
+        }
+    }
+
+    frameId = requestAnimationFrame(executar);
+}
+
+// RESULTADOS
+
+function mostrarResultado(id, texto, classe) {
+
+    const resultado = document.getElementById(`resultado-${id}`);
+
+    resultado.textContent = texto;
+    resultado.className = "resultado " + classe;
+}
+
+// ATUALIZAR BOTÕES
+
+function atualizarBotao(id) {
+
+    const dado = buscar(id);
+
+    document.getElementById(`iniciar-${id}`).disabled =
+        dado.ativo;
+
+    document.getElementById(`parar-${id}`).disabled =
+        !dado.ativo;
+
+    document.getElementById(`iniciar-${id}`).textContent =
+        dado.pausado ? "INICIAR NOVAMENTE" : "INICIAR";
+}
+
+// ATUALIZAR CONTADORES
+
+function atualizar(id) {
+
+    const dado = buscar(id);
+
+    document.getElementById(`tentativas-${id}`).textContent =
+        dado.tentativas.toLocaleString("pt-BR");
+
+    document.getElementById(`ganhos-${id}`).textContent =
+        dado.ganhos.toLocaleString("pt-BR");
+
+    atualizarBotao(id);
+}
+
+function atualizarTodos() {
+
+    for (const dado of dados) {
+        atualizar(dado.id);
+    }
+
+    document.getElementById("totalTentativas").textContent =
+        totalTentativas.toLocaleString("pt-BR");
+
+    document.getElementById("totalGanhos").textContent =
+        totalGanhos.toLocaleString("pt-BR");
+}
+
+// RESETAR ITEM
+
+function resetarItem(id) {
+
+    const dado = buscar(id);
+
+    dado.ativo = false;
+    dado.pausado = false;
+    dado.tentativas = 0;
+    dado.ganhos = 0;
+
+    totalTentativas = dados.reduce((soma, d) => soma + d.tentativas, 0);
+    totalGanhos = dados.reduce((soma, d) => soma + d.ganhos, 0);
+
+    mostrarResultado(id, "Aguardando início...", "");
+
+    atualizarTodos();
+}
+
+// RESETAR TUDO
+
+function resetarTudo() {
+
+    if (!confirm("Deseja resetar todos os itens?")) return;
+
+    dados.forEach(dado => {
+
+        dado.ativo = false;
+        dado.pausado = false;
+        dado.tentativas = 0;
+        dado.ganhos = 0;
+
+        mostrarResultado(
+            dado.id,
+            "Aguardando início...",
+            ""
+        );
+    });
+
+    totalTentativas = 0;
+    totalGanhos = 0;
+
+    atualizarTodos();
+
+    if (frameId !== null) {
+        cancelAnimationFrame(frameId);
+        frameId = null;
+    }
+
+    simulacaoAtiva = false;
+}
+
+// INICIALIZAÇÃO
+
+principais.forEach(item => criarItem(item, "principais"));
+gizmos.forEach(item => criarItem(item, "gizmos"));
+
+atualizarTodos();
+
+</script>
+
+</body>
+</html>
